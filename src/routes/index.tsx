@@ -1,26 +1,40 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Starfield } from "@/components/Starfield";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { HeroSection } from "@/components/landing/HeroSection";
+import { FeaturesSection } from "@/components/landing/FeaturesSection";
+import { ReportsSection } from "@/components/landing/ReportsSection";
+import { PricingSection } from "@/components/landing/PricingSection";
+import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
+import { EmailCaptureSection } from "@/components/landing/EmailCaptureSection";
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Cosmic Blueprint — Unlock Your Astrological Destiny" },
+      { name: "description", content: "Discover your destiny, relationships, and life purpose through precise Swiss Ephemeris astrological analysis. Get your free birth chart today." },
+      { property: "og:title", content: "Cosmic Blueprint — Unlock Your Astrological Destiny" },
+      { property: "og:description", content: "Discover your destiny, relationships, and life purpose through precise astrological analysis." },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
+function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="relative min-h-screen bg-background">
+      <Starfield />
+      <Header />
+      <main className="relative z-10">
+        <HeroSection />
+        <FeaturesSection />
+        <ReportsSection />
+        <PricingSection />
+        <TestimonialsSection />
+        <EmailCaptureSection />
+      </main>
+      <Footer />
     </div>
   );
-}
-
-function Index() {
-  return <PlaceholderIndex />;
 }
