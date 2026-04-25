@@ -67,7 +67,8 @@ export function clearAccuracyCache(): void {
 async function persistRun(result: AccuracyTestResult): Promise<void> {
   try {
     const { error } = await supabaseAdmin.from("accuracy_test_runs").insert({
-      passed: result.passed,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      passed: result.passed as any,
       tolerance_degrees: result.toleranceDegrees,
       benchmark_name: result.benchmarkName,
       ephemeris_engine: result.ephemerisEngine,
