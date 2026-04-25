@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      accuracy_test_runs: {
+        Row: {
+          actual_positions: Json | null
+          benchmark_name: string
+          created_at: string
+          deltas: Json | null
+          duration_ms: number | null
+          ephemeris_config: Json | null
+          ephemeris_engine: string | null
+          epoch_utc: string | null
+          error_message: string | null
+          expected_positions: Json | null
+          failed_planets: string[] | null
+          id: string
+          julian_day: number | null
+          max_delta_degrees: number | null
+          passed: boolean
+          raw_response: Json | null
+          tolerance_degrees: number
+        }
+        Insert: {
+          actual_positions?: Json | null
+          benchmark_name: string
+          created_at?: string
+          deltas?: Json | null
+          duration_ms?: number | null
+          ephemeris_config?: Json | null
+          ephemeris_engine?: string | null
+          epoch_utc?: string | null
+          error_message?: string | null
+          expected_positions?: Json | null
+          failed_planets?: string[] | null
+          id?: string
+          julian_day?: number | null
+          max_delta_degrees?: number | null
+          passed: boolean
+          raw_response?: Json | null
+          tolerance_degrees: number
+        }
+        Update: {
+          actual_positions?: Json | null
+          benchmark_name?: string
+          created_at?: string
+          deltas?: Json | null
+          duration_ms?: number | null
+          ephemeris_config?: Json | null
+          ephemeris_engine?: string | null
+          epoch_utc?: string | null
+          error_message?: string | null
+          expected_positions?: Json | null
+          failed_planets?: string[] | null
+          id?: string
+          julian_day?: number | null
+          max_delta_degrees?: number | null
+          passed?: boolean
+          raw_response?: Json | null
+          tolerance_degrees?: number
+        }
+        Relationships: []
+      }
       birth_charts: {
         Row: {
           ascendant: number | null
