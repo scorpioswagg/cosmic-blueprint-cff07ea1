@@ -80,7 +80,9 @@ export type Database = {
           aspects: Json | null
           birth_date: string
           birth_time: string
+          calculation_source: string | null
           city: string
+          comparison_positions: Json | null
           country: string
           created_at: string
           houses: Json | null
@@ -98,7 +100,9 @@ export type Database = {
           aspects?: Json | null
           birth_date: string
           birth_time: string
+          calculation_source?: string | null
           city: string
+          comparison_positions?: Json | null
           country: string
           created_at?: string
           houses?: Json | null
@@ -116,7 +120,9 @@ export type Database = {
           aspects?: Json | null
           birth_date?: string
           birth_time?: string
+          calculation_source?: string | null
           city?: string
+          comparison_positions?: Json | null
           country?: string
           created_at?: string
           houses?: Json | null
