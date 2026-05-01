@@ -16,6 +16,7 @@ import {
   calculateWithSwissEphemeris,
   SwissEphemerisUnavailableError,
 } from "./swiss-ephemeris.server";
+import { geocodeLocation } from "./geocoding.server";
 import type { AccuracyDelta, PlanetName, PlanetPosition } from "./types";
 
 const BirthInputSchema = z.object({
@@ -24,9 +25,6 @@ const BirthInputSchema = z.object({
   birthTime: z.string().regex(/^\d{2}:\d{2}$/),
   city: z.string().min(1).max(120),
   country: z.string().min(1).max(120),
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
-  timezoneOffsetHours: z.number().min(-14).max(14),
   compareWithFreeAstro: z.boolean().optional().default(false),
 });
 
@@ -48,8 +46,8 @@ function buildDeltas(
     if (typeof c !== "number") continue;
     out.push({
       planet: t.name,
-      expected: t.longitude, // "expected" = source of truth (Swiss Ephemeris)
-      actual: c, // "actual" = comparison engine value
+      expected: t.longitude,
+      actual: c,
       deltaDegrees: shortestArcDelta(c, t.longitude),
     });
   }
@@ -62,33 +60,39 @@ export const calculateChart = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
+    // 0) GEOCODE — resolve city/country → lat, lng, timezone
+    let geo;
+    try {
+      geo = await geocodeLocation(data.city, data.country, data.birthDate, data.birthTime);
+    } catch (err) {
+      return { ok: false as const, error: (err as Error).message };
+    }
+
+    const birthInput = {
+      name: data.name,
+      birthDate: data.birthDate,
+      birthTime: data.birthTime,
+      city: data.city,
+      country: data.country,
+      latitude: geo.latitude,
+      longitude: geo.longitude,
+      timezoneOffsetHours: geo.timezoneOffsetHours,
+    };
+
     // 1) SOURCE OF TRUTH — Swiss Ephemeris.
     let swiss;
     try {
-      swiss = await calculateWithSwissEphemeris({
-        name: data.name,
-        birthDate: data.birthDate,
-        birthTime: data.birthTime,
-        city: data.city,
-        country: data.country,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        timezoneOffsetHours: data.timezoneOffsetHours,
-      });
+      swiss = await calculateWithSwissEphemeris(birthInput);
     } catch (err) {
       const message =
         err instanceof SwissEphemerisUnavailableError
           ? err.message
           : `Swiss Ephemeris calculation failed: ${(err as Error).message}`;
       console.error("[calculateChart] swiss ephemeris error:", message);
-      return {
-        ok: false as const,
-        error: message,
-      };
+      return { ok: false as const, error: message };
     }
 
-    // 2) OPTIONAL — FreeAstro comparison. Failure here must NOT block storage
-    //    of the canonical Swiss Ephemeris result.
+    // 2) OPTIONAL — FreeAstro comparison.
     let comparison: {
       engine: "freeastro";
       planets: PlanetPosition[];
@@ -101,21 +105,9 @@ export const calculateChart = createServerFn({ method: "POST" })
 
     if (data.compareWithFreeAstro) {
       try {
-        const fa = await callFreeAstro({
-          name: data.name,
-          birthDate: data.birthDate,
-          birthTime: data.birthTime,
-          city: data.city,
-          country: data.country,
-          latitude: data.latitude,
-          longitude: data.longitude,
-          timezoneOffsetHours: data.timezoneOffsetHours,
-        });
+        const fa = await callFreeAstro(birthInput);
         const deltas = buildDeltas(swiss.planets, fa.planets);
-        const maxDelta = deltas.reduce(
-          (m, d) => Math.max(m, Math.abs(d.deltaDegrees)),
-          0
-        );
+        const maxDelta = deltas.reduce((m, d) => Math.max(m, Math.abs(d.deltaDegrees)), 0);
         comparison = {
           engine: "freeastro",
           planets: fa.planets,
@@ -140,8 +132,7 @@ export const calculateChart = createServerFn({ method: "POST" })
       }
     }
 
-    // 3) Persist. `planets` ALWAYS holds Swiss Ephemeris values.
-    //    `comparison_positions` holds the optional comparison payload.
+    // 3) Persist.
     const insertPayload = {
       user_id: userId,
       name: data.name,
@@ -149,9 +140,9 @@ export const calculateChart = createServerFn({ method: "POST" })
       birth_time: data.birthTime,
       city: data.city,
       country: data.country,
-      latitude: data.latitude,
-      longitude: data.longitude,
-      timezone: String(data.timezoneOffsetHours),
+      latitude: geo.latitude,
+      longitude: geo.longitude,
+      timezone: geo.timezoneName,
       planets: swiss.planets as unknown as object,
       ascendant: swiss.ascendant,
       midheaven: swiss.midheaven,
@@ -175,6 +166,13 @@ export const calculateChart = createServerFn({ method: "POST" })
     return {
       ok: true as const,
       chartId: inserted.id as string,
+      geocoding: {
+        latitude: geo.latitude,
+        longitude: geo.longitude,
+        timezone: geo.timezoneName,
+        timezoneOffset: geo.timezoneOffsetHours,
+        resolvedLocation: geo.displayName,
+      },
       sourceOfTruth: {
         engine: swiss.ephemerisEngine,
         planets: swiss.planets,
