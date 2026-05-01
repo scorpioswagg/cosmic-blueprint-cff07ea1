@@ -19,9 +19,7 @@ export const Route = createFileRoute("/chart")({
   errorComponent: ({ error }) => (
     <div className="flex min-h-screen items-center justify-center px-4 text-center">
       <div>
-        <h1 className="text-xl font-semibold text-foreground">
-          Something went wrong
-        </h1>
+        <h1 className="text-xl font-semibold text-foreground">Something went wrong</h1>
         <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
       </div>
     </div>
@@ -34,9 +32,6 @@ interface FormState {
   birthTime: string;
   city: string;
   country: string;
-  latitude: string;
-  longitude: string;
-  timezoneOffsetHours: string;
   compareWithFreeAstro: boolean;
 }
 
@@ -46,9 +41,6 @@ const initialState: FormState = {
   birthTime: "",
   city: "",
   country: "",
-  latitude: "",
-  longitude: "",
-  timezoneOffsetHours: "0",
   compareWithFreeAstro: false,
 };
 
@@ -69,15 +61,6 @@ function ChartPage() {
     e.preventDefault();
     setError(null);
     setResult(null);
-
-    const lat = parseFloat(form.latitude);
-    const lon = parseFloat(form.longitude);
-    const tz = parseFloat(form.timezoneOffsetHours);
-    if (!Number.isFinite(lat) || !Number.isFinite(lon) || !Number.isFinite(tz)) {
-      setError("Latitude, longitude, and timezone must be valid numbers.");
-      return;
-    }
-
     setSubmitting(true);
     try {
       const r = await calc({
@@ -87,9 +70,6 @@ function ChartPage() {
           birthTime: form.birthTime,
           city: form.city.trim(),
           country: form.country.trim(),
-          latitude: lat,
-          longitude: lon,
-          timezoneOffsetHours: tz,
           compareWithFreeAstro: form.compareWithFreeAstro,
         },
       });
@@ -97,7 +77,6 @@ function ChartPage() {
       if (!r.ok) setError(r.error);
     } catch (err) {
       const msg = (err as Error).message;
-      // Auth errors → redirect to login
       if (/auth|unauthor|sign in|jwt/i.test(msg)) {
         navigate({ to: "/login" });
         return;
@@ -113,17 +92,14 @@ function ChartPage() {
       <Starfield />
       <div className="relative z-10 mx-auto w-full max-w-3xl">
         <div className="text-center">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-lg font-bold text-foreground"
-          >
+          <Link to="/" className="inline-flex items-center gap-2 text-lg font-bold text-foreground">
             Cosmic <span className="text-primary">Blueprint</span>
           </Link>
           <h1 className="mt-6 text-3xl font-bold text-foreground sm:text-4xl">
             Generate Your Birth Chart
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Calculations use Swiss Ephemeris as the source of truth.
+            Calculations use Swiss Ephemeris as the source of truth. Location coordinates and timezone are resolved automatically.
           </p>
         </div>
 
@@ -133,92 +109,19 @@ function ChartPage() {
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Full Name" htmlFor="name">
-              <input
-                id="name"
-                required
-                value={form.name}
-                onChange={(e) => update("name", e.target.value)}
-                className={inputCls}
-                placeholder="Kyle Merritt"
-              />
+              <input id="name" required value={form.name} onChange={(e) => update("name", e.target.value)} className={inputCls} placeholder="Kyle Merritt" />
             </Field>
             <Field label="Birth Date" htmlFor="birthDate">
-              <input
-                id="birthDate"
-                type="date"
-                required
-                value={form.birthDate}
-                onChange={(e) => update("birthDate", e.target.value)}
-                className={inputCls}
-              />
+              <input id="birthDate" type="date" required value={form.birthDate} onChange={(e) => update("birthDate", e.target.value)} className={inputCls} />
             </Field>
             <Field label="Birth Time (24h, local)" htmlFor="birthTime">
-              <input
-                id="birthTime"
-                type="time"
-                required
-                value={form.birthTime}
-                onChange={(e) => update("birthTime", e.target.value)}
-                className={inputCls}
-              />
-            </Field>
-            <Field label="Timezone Offset (hours from UTC)" htmlFor="tz">
-              <input
-                id="tz"
-                type="number"
-                step="0.25"
-                min={-14}
-                max={14}
-                required
-                value={form.timezoneOffsetHours}
-                onChange={(e) => update("timezoneOffsetHours", e.target.value)}
-                className={inputCls}
-                placeholder="-4"
-              />
+              <input id="birthTime" type="time" required value={form.birthTime} onChange={(e) => update("birthTime", e.target.value)} className={inputCls} />
             </Field>
             <Field label="City" htmlFor="city">
-              <input
-                id="city"
-                required
-                value={form.city}
-                onChange={(e) => update("city", e.target.value)}
-                className={inputCls}
-                placeholder="Cincinnati"
-              />
+              <input id="city" required value={form.city} onChange={(e) => update("city", e.target.value)} className={inputCls} placeholder="Cincinnati" />
             </Field>
             <Field label="Country" htmlFor="country">
-              <input
-                id="country"
-                required
-                value={form.country}
-                onChange={(e) => update("country", e.target.value)}
-                className={inputCls}
-                placeholder="USA"
-              />
-            </Field>
-            <Field label="Latitude" htmlFor="lat">
-              <input
-                id="lat"
-                type="number"
-                step="any"
-                required
-                value={form.latitude}
-                onChange={(e) => update("latitude", e.target.value)}
-                className={inputCls}
-                placeholder="39.1031"
-              />
-            </Field>
-            <Field label="Longitude" htmlFor="lon">
-              <input
-                id="lon"
-                type="number"
-                step="any"
-                required
-                value={form.longitude}
-                onChange={(e) => update("longitude", e.target.value)}
-                className={inputCls}
-                placeholder="-84.5120"
-              />
+              <input id="country" required value={form.country} onChange={(e) => update("country", e.target.value)} className={inputCls} placeholder="USA" />
             </Field>
           </div>
 
@@ -226,26 +129,17 @@ function ChartPage() {
             <input
               type="checkbox"
               checked={form.compareWithFreeAstro}
-              onChange={(e) =>
-                update("compareWithFreeAstro", e.target.checked)
-              }
+              onChange={(e) => update("compareWithFreeAstro", e.target.checked)}
               className="mt-1 h-4 w-4 accent-primary"
             />
             <span className="text-sm">
-              <span className="block font-medium text-foreground">
-                Also fetch FreeAstro positions for comparison
-              </span>
-              <span className="block text-muted-foreground">
-                FreeAstro values are stored separately and never replace Swiss
-                Ephemeris. You'll see per-planet deltas.
-              </span>
+              <span className="block font-medium text-foreground">Also fetch FreeAstro positions for comparison</span>
+              <span className="block text-muted-foreground">FreeAstro values are stored separately and never replace Swiss Ephemeris. You'll see per-planet deltas.</span>
             </span>
           </label>
 
           {error && (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {error}
-            </div>
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>
           )}
 
           <button
@@ -266,55 +160,37 @@ function ChartPage() {
 const inputCls =
   "w-full rounded-lg border border-border/60 bg-background/60 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
 
-function Field({
-  label,
-  htmlFor,
-  children,
-}: {
-  label: string;
-  htmlFor: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, htmlFor, children }: { label: string; htmlFor: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={htmlFor} className="block text-xs font-medium text-muted-foreground">
-        {label}
-      </label>
+      <label htmlFor={htmlFor} className="block text-xs font-medium text-muted-foreground">{label}</label>
       {children}
     </div>
   );
 }
 
-function ResultsPanel({
-  result,
-}: {
-  result: Extract<CalcResult, { ok: true }>;
-}) {
-  const { sourceOfTruth, comparison } = result;
+function ResultsPanel({ result }: { result: Extract<CalcResult, { ok: true }> }) {
+  const { sourceOfTruth, comparison, geocoding } = result;
   return (
     <div className="mt-8 space-y-6">
+      {geocoding && (
+        <div className="rounded-xl border border-border/40 bg-card/30 px-5 py-3 text-sm text-muted-foreground backdrop-blur-sm">
+          <span className="font-medium text-foreground">Resolved location:</span>{" "}
+          {geocoding.resolvedLocation} · {geocoding.latitude.toFixed(4)}°, {geocoding.longitude.toFixed(4)}° · {geocoding.timezone} (UTC{geocoding.timezoneOffset >= 0 ? "+" : ""}{geocoding.timezoneOffset})
+        </div>
+      )}
+
       <div className="rounded-2xl border border-primary/30 bg-card/50 p-6 backdrop-blur-sm">
         <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-foreground">
-            Swiss Ephemeris (source of truth)
-          </h2>
-          <span className="rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs text-primary">
-            engine: {sourceOfTruth.engine}
-          </span>
+          <h2 className="text-lg font-semibold text-foreground">Swiss Ephemeris (source of truth)</h2>
+          <span className="rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs text-primary">engine: {sourceOfTruth.engine}</span>
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">
-          JD {sourceOfTruth.julianDay ?? "—"} · Epoch {sourceOfTruth.epochUtc ?? "—"}
-        </p>
+        <p className="mt-1 text-xs text-muted-foreground">JD {sourceOfTruth.julianDay ?? "—"} · Epoch {sourceOfTruth.epochUtc ?? "—"}</p>
         <ul className="mt-4 grid gap-2 sm:grid-cols-2">
           {sourceOfTruth.planets.map((p) => (
-            <li
-              key={p.name}
-              className="flex items-center justify-between rounded-md border border-border/40 bg-background/40 px-3 py-2 text-sm"
-            >
+            <li key={p.name} className="flex items-center justify-between rounded-md border border-border/40 bg-background/40 px-3 py-2 text-sm">
               <span className="font-medium text-foreground">{p.name}</span>
-              <span className="font-mono text-muted-foreground">
-                {p.longitude.toFixed(4)}°
-              </span>
+              <span className="font-mono text-muted-foreground">{p.longitude.toFixed(4)}°</span>
             </li>
           ))}
         </ul>
@@ -323,22 +199,15 @@ function ResultsPanel({
       {comparison && (
         <div className="rounded-2xl border border-border/50 bg-card/30 p-6 backdrop-blur-sm">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-lg font-semibold text-foreground">
-              Comparison: FreeAstro
-            </h2>
-            <span className="rounded-full border border-border/60 bg-background/40 px-3 py-1 text-xs text-muted-foreground">
-              comparison only
-            </span>
+            <h2 className="text-lg font-semibold text-foreground">Comparison: FreeAstro</h2>
+            <span className="rounded-full border border-border/60 bg-background/40 px-3 py-1 text-xs text-muted-foreground">comparison only</span>
           </div>
           {comparison.error ? (
             <p className="mt-3 text-sm text-destructive">{comparison.error}</p>
           ) : (
             <>
               <p className="mt-1 text-xs text-muted-foreground">
-                Max delta vs Swiss Ephemeris:{" "}
-                <span className="font-mono text-foreground">
-                  {comparison.maxDeltaDegrees.toFixed(4)}°
-                </span>
+                Max delta vs Swiss Ephemeris: <span className="font-mono text-foreground">{comparison.maxDeltaDegrees.toFixed(4)}°</span>
               </p>
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full text-sm">
@@ -353,24 +222,11 @@ function ResultsPanel({
                   <tbody className="divide-y divide-border/30">
                     {comparison.deltas.map((d) => (
                       <tr key={d.planet}>
-                        <td className="py-2 pr-4 font-medium text-foreground">
-                          {d.planet}
-                        </td>
-                        <td className="py-2 pr-4 font-mono text-muted-foreground">
-                          {d.expected.toFixed(4)}°
-                        </td>
-                        <td className="py-2 pr-4 font-mono text-muted-foreground">
-                          {d.actual.toFixed(4)}°
-                        </td>
-                        <td
-                          className={`py-2 font-mono ${
-                            Math.abs(d.deltaDegrees) > 0.5
-                              ? "text-destructive"
-                              : "text-foreground"
-                          }`}
-                        >
-                          {d.deltaDegrees >= 0 ? "+" : ""}
-                          {d.deltaDegrees.toFixed(4)}°
+                        <td className="py-2 pr-4 font-medium text-foreground">{d.planet}</td>
+                        <td className="py-2 pr-4 font-mono text-muted-foreground">{d.expected.toFixed(4)}°</td>
+                        <td className="py-2 pr-4 font-mono text-muted-foreground">{d.actual.toFixed(4)}°</td>
+                        <td className={`py-2 font-mono ${Math.abs(d.deltaDegrees) > 0.5 ? "text-destructive" : "text-foreground"}`}>
+                          {d.deltaDegrees >= 0 ? "+" : ""}{d.deltaDegrees.toFixed(4)}°
                         </td>
                       </tr>
                     ))}
