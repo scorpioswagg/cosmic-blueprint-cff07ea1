@@ -75,13 +75,23 @@ function ChartPage() {
       });
       setResult(r);
       if (!r.ok) setError(r.error);
-    } catch (err) {
-      const msg = (err as Error).message;
-      if (/auth|unauthor|sign in|jwt/i.test(msg)) {
-        navigate({ to: "/login" });
-        return;
+    } catch (err: unknown) {
+      // requireSupabaseAuth throws a Response object (not an Error) on 401
+      if (err instanceof Response) {
+        if (err.status === 401 || err.status === 403) {
+          navigate({ to: "/login" });
+          return;
+        }
+        const body = await err.text().catch(() => "");
+        setError(body || `Server error (${err.status})`);
+      } else {
+        const msg = (err as Error).message ?? String(err);
+        if (/auth|unauthor|sign in|jwt/i.test(msg)) {
+          navigate({ to: "/login" });
+          return;
+        }
+        setError(msg);
       }
-      setError(msg);
     } finally {
       setSubmitting(false);
     }
