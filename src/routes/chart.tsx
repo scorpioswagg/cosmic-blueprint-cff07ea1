@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { calculateChart } from "@/utils/astrology/chart.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { Starfield } from "@/components/Starfield";
 
 export const Route = createFileRoute("/chart")({
@@ -63,7 +64,16 @@ function ChartPage() {
     setResult(null);
     setSubmitting(true);
     try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (sessionError || !accessToken) {
+        navigate({ to: "/login" });
+        return;
+      }
+
       const r = await calc({
+        headers: { Authorization: `Bearer ${accessToken}` },
         data: {
           name: form.name.trim(),
           birthDate: form.birthDate,
@@ -86,7 +96,7 @@ function ChartPage() {
         setError(body || `Server error (${err.status})`);
       } else {
         const msg = (err as Error).message ?? String(err);
-        if (/auth|unauthor|sign in|jwt/i.test(msg)) {
+        if (/auth|unauthor|sign in|jwt|\[object Response\]/i.test(msg)) {
           navigate({ to: "/login" });
           return;
         }
