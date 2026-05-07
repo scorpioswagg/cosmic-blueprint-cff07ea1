@@ -233,7 +233,7 @@ function ChartPage() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || isSignedIn === false}
             className="w-full rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? "Calculating..." : "Calculate Chart"}
