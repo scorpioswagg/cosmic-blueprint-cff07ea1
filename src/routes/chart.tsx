@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { calculateChart } from "@/utils/astrology/chart.functions";
 import { supabase } from "@/integrations/supabase/client";
