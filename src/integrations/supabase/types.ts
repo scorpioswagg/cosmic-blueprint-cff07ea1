@@ -226,6 +226,45 @@ export type Database = {
         }
         Relationships: []
       }
+      report_products: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          name: string
+          page_estimate: string
+          price_cents: number
+          report_type: Database["public"]["Enums"]["report_type"]
+          sort_order: number
+          tagline: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          is_active?: boolean
+          name: string
+          page_estimate?: string
+          price_cents?: number
+          report_type: Database["public"]["Enums"]["report_type"]
+          sort_order?: number
+          tagline: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          page_estimate?: string
+          price_cents?: number
+          report_type?: Database["public"]["Enums"]["report_type"]
+          sort_order?: number
+          tagline?: string
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           chart_id: string
@@ -308,7 +347,20 @@ export type Database = {
       app_role: "admin" | "moderator" | "user"
       payment_status: "pending" | "completed" | "failed" | "refunded"
       report_status: "pending" | "generating" | "completed" | "failed"
-      report_type: "natal" | "compatibility" | "transit" | "soul_purpose"
+      report_type:
+        | "natal"
+        | "compatibility"
+        | "transit"
+        | "soul_purpose"
+        | "solar_return"
+        | "lunar_return"
+        | "progressed"
+        | "career_vocation"
+        | "relocation"
+        | "child_profile"
+        | "past_life_karma"
+        | "health_wellness"
+        | "financial_abundance"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -439,7 +491,21 @@ export const Constants = {
       app_role: ["admin", "moderator", "user"],
       payment_status: ["pending", "completed", "failed", "refunded"],
       report_status: ["pending", "generating", "completed", "failed"],
-      report_type: ["natal", "compatibility", "transit", "soul_purpose"],
+      report_type: [
+        "natal",
+        "compatibility",
+        "transit",
+        "soul_purpose",
+        "solar_return",
+        "lunar_return",
+        "progressed",
+        "career_vocation",
+        "relocation",
+        "child_profile",
+        "past_life_karma",
+        "health_wellness",
+        "financial_abundance",
+      ],
     },
   },
 } as const
