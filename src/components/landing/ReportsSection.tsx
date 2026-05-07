@@ -1,9 +1,12 @@
+import { Link } from "@tanstack/react-router";
+
 const reports = [
   {
     name: "Natal Chart Report",
     price: "$9.99",
     description: "Complete birth chart analysis with planet positions, house meanings, and aspect interpretations.",
     pages: "30–50 pages",
+    icon: "🌟",
     color: "from-primary/20 to-primary/5",
   },
   {
@@ -11,21 +14,24 @@ const reports = [
     price: "$14.99",
     description: "Synastry analysis comparing two charts to reveal relationship dynamics and chemistry.",
     pages: "40–60 pages",
-    color: "from-accent/20 to-accent/5",
+    icon: "💞",
+    color: "from-pink-500/20 to-pink-500/5",
   },
   {
     name: "Transit Forecast",
     price: "$19.99",
     description: "12-month forecast of planetary transits and their impact on your life areas.",
     pages: "50–80 pages",
-    color: "from-violet/20 to-violet/5",
+    icon: "🔮",
+    color: "from-violet-500/20 to-violet-500/5",
   },
   {
     name: "Soul Purpose Report",
     price: "$29.99",
     description: "Deep dive into your North Node, karmic patterns, and spiritual life mission.",
     pages: "60–100 pages",
-    color: "from-gold/20 to-gold/5",
+    icon: "🧭",
+    color: "from-amber-500/20 to-amber-500/5",
   },
 ];
 
@@ -53,13 +59,26 @@ export function ReportsSection() {
             >
               <div className={`absolute inset-0 bg-gradient-to-b ${r.color} opacity-0 transition-opacity group-hover:opacity-100`} />
               <div className="relative">
-                <span className="text-xs font-medium text-muted-foreground">{r.pages}</span>
+                <div className="flex items-start justify-between">
+                  <span className="text-2xl">{r.icon}</span>
+                  <span className="text-xs font-medium text-muted-foreground">{r.pages}</span>
+                </div>
                 <h3 className="mt-2 text-lg font-semibold text-foreground">{r.name}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{r.description}</p>
                 <div className="mt-4 text-2xl font-bold text-primary">{r.price}</div>
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="mt-10 text-center">
+          <Link
+            to="/reports"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25"
+          >
+            View All 13 Reports
+            <span aria-hidden>→</span>
+          </Link>
         </div>
       </div>
     </section>
