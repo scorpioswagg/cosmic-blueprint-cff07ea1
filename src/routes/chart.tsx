@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { calculateChart } from "@/utils/astrology/chart.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,6 +54,17 @@ function ChartPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CalcResult | null>(null);
+  const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setIsSignedIn(!!data.session);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsSignedIn(!!session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -123,6 +134,21 @@ function ChartPage() {
             timezone are resolved automatically.
           </p>
         </div>
+
+        {isSignedIn === false && (
+          <div className="mt-8 rounded-2xl border border-primary/30 bg-primary/5 p-6 text-center backdrop-blur-sm">
+            <p className="text-lg font-semibold text-foreground">Sign in to generate your chart</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              You need an account to calculate and save your birth chart.
+            </p>
+            <Link
+              to="/login"
+              className="mt-4 inline-block rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25"
+            >
+              Sign In / Sign Up
+            </Link>
+          </div>
+        )}
 
         <form
           onSubmit={onSubmit}
@@ -207,7 +233,7 @@ function ChartPage() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || isSignedIn === false}
             className="w-full rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? "Calculating..." : "Calculate Chart"}
