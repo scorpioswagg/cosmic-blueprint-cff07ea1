@@ -135,6 +135,21 @@ function ChartPage() {
           </p>
         </div>
 
+        {isSignedIn === false && (
+          <div className="mt-8 rounded-2xl border border-primary/30 bg-primary/5 p-6 text-center backdrop-blur-sm">
+            <p className="text-lg font-semibold text-foreground">Sign in to generate your chart</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              You need an account to calculate and save your birth chart.
+            </p>
+            <Link
+              to="/login"
+              className="mt-4 inline-block rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25"
+            >
+              Sign In / Sign Up
+            </Link>
+          </div>
+        )}
+
         <form
           onSubmit={onSubmit}
           className="mt-10 space-y-6 rounded-2xl border border-border/50 bg-card/50 p-6 backdrop-blur-sm sm:p-8"
