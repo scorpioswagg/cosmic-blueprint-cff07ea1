@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { createClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /**
@@ -6,7 +7,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  */
 export const getReportProducts = createServerFn({ method: "GET" }).handler(
   async () => {
-    const { createClient } = await import("@supabase/supabase-js");
     const supabase = createClient(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_PUBLISHABLE_KEY!,
