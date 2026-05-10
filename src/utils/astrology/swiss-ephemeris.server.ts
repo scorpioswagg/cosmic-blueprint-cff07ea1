@@ -82,7 +82,7 @@ export async function calculateWithSwissEphemeris(
   const [year, month, day] = input.birthDate.split("-").map((n) => parseInt(n, 10));
   const [hour, minute] = input.birthTime.split(":").map((n) => parseInt(n, 10));
 
-  const url = baseUrl.replace(/\/$/, "") + "/natal";
+  const url = baseUrl.replace(/\/$/, "") + "/calculate-chart";
   const apiKey = process.env.SWISS_EPHEMERIS_API_KEY;
 
   const headers: Record<string, string> = { "Content-Type": "application/json" };
