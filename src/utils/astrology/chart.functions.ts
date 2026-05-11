@@ -7,7 +7,7 @@
 //     Its values are stored under `comparison_positions` and NEVER
 //     overwrite or substitute for the Swiss Ephemeris results.
 //   - AI does not simulate positions anywhere in this flow.
-
+console.log("API URL:", import.meta.env.VITE_SWISS_EPHEMERIS_URL);
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
