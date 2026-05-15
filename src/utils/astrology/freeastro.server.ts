@@ -75,8 +75,8 @@ export async function callFreeAstro(input: BirthInput): Promise<FreeAstroParsed>
     hour,
     minute,
     seconds: 0,
-    latitude: input.latitude,
-    longitude: input.longitude,
+    lat: input.latitude,
+    lng: input.longitude,
     timezone: input.timezoneOffsetHours,
   };
 
