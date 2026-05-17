@@ -175,23 +175,22 @@ function ChartPage() {
         },
       });
       setResult(r);
-      if (!r.ok) setError(r.error);
+      if (!r.ok) setError(friendlyError(r.error));
     } catch (err: unknown) {
-      // requireSupabaseAuth throws a Response object (not an Error) on 401
       if (err instanceof Response) {
         if (err.status === 401 || err.status === 403) {
           navigate({ to: "/login" });
           return;
         }
         const body = await err.text().catch(() => "");
-        setError(body || `Server error (${err.status})`);
+        setError(friendlyError(body || `Server error (${err.status})`));
       } else {
         const msg = (err as Error).message ?? String(err);
         if (/auth|unauthor|sign in|jwt|\[object Response\]/i.test(msg)) {
           navigate({ to: "/login" });
           return;
         }
-        setError(msg);
+        setError(friendlyError(msg));
       }
     } finally {
       setSubmitting(false);
