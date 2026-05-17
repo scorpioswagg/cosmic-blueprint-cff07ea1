@@ -207,23 +207,45 @@ function ChartPage() {
             </Field>
           </div>
 
-          <label className="flex items-start gap-3 rounded-lg border border-border/50 bg-background/40 p-4 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.compareWithFreeAstro}
-              onChange={(e) => update("compareWithFreeAstro", e.target.checked)}
-              className="mt-1 h-4 w-4 accent-primary"
-            />
-            <span className="text-sm">
-              <span className="block font-medium text-foreground">
-                Also fetch FreeAstro positions for comparison
+          <fieldset className="space-y-2">
+            <legend className="block text-xs font-medium text-muted-foreground mb-2">
+              Calculation mode
+            </legend>
+            <label className="flex items-start gap-3 rounded-lg border border-border/50 bg-background/40 p-4 cursor-pointer hover:border-primary/40 transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+              <input
+                type="radio"
+                name="calcMode"
+                checked={!form.compareWithFreeAstro}
+                onChange={() => update("compareWithFreeAstro", false)}
+                className="mt-1 h-4 w-4 accent-primary"
+              />
+              <span className="text-sm">
+                <span className="block font-medium text-foreground">
+                  Swiss Ephemeris only (recommended)
+                </span>
+                <span className="block text-muted-foreground">
+                  Fastest and most accurate. Skips the FreeAstro call entirely.
+                </span>
               </span>
-              <span className="block text-muted-foreground">
-                FreeAstro values are stored separately and never replace Swiss Ephemeris. You'll see
-                per-planet deltas.
+            </label>
+            <label className="flex items-start gap-3 rounded-lg border border-border/50 bg-background/40 p-4 cursor-pointer hover:border-primary/40 transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+              <input
+                type="radio"
+                name="calcMode"
+                checked={form.compareWithFreeAstro}
+                onChange={() => update("compareWithFreeAstro", true)}
+                className="mt-1 h-4 w-4 accent-primary"
+              />
+              <span className="text-sm">
+                <span className="block font-medium text-foreground">
+                  Swiss Ephemeris + FreeAstro comparison
+                </span>
+                <span className="block text-muted-foreground">
+                  Also fetches FreeAstro positions and shows per-planet deltas. Slower.
+                </span>
               </span>
-            </span>
-          </label>
+            </label>
+          </fieldset>
 
           {error && (
             <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
