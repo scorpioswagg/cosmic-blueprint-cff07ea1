@@ -348,16 +348,23 @@ function ChartPage() {
   );
 }
 
-const inputCls =
-  "w-full rounded-lg border border-border/60 bg-background/60 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
+function inputCls(hasError: boolean) {
+  const base =
+    "w-full rounded-lg border bg-background/60 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1";
+  return hasError
+    ? `${base} border-destructive/70 focus:border-destructive focus:ring-destructive`
+    : `${base} border-border/60 focus:border-primary focus:ring-primary`;
+}
 
 function Field({
   label,
   htmlFor,
+  error,
   children,
 }: {
   label: string;
   htmlFor: string;
+  error?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -366,6 +373,11 @@ function Field({
         {label}
       </label>
       {children}
+      {error && (
+        <p className="text-xs text-destructive" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
