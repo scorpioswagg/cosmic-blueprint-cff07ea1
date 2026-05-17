@@ -234,54 +234,55 @@ function ChartPage() {
           className="mt-10 space-y-6 rounded-2xl border border-border/50 bg-card/50 p-6 backdrop-blur-sm sm:p-8"
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Full Name" htmlFor="name">
+            <Field label="Full Name" htmlFor="name" error={fieldErrors.name}>
               <input
                 id="name"
-                required
                 value={form.name}
                 onChange={(e) => update("name", e.target.value)}
-                className={inputCls}
+                className={inputCls(!!fieldErrors.name)}
                 placeholder="Kyle Merritt"
+                aria-invalid={!!fieldErrors.name}
               />
             </Field>
-            <Field label="Birth Date" htmlFor="birthDate">
+            <Field label="Birth Date" htmlFor="birthDate" error={fieldErrors.birthDate}>
               <input
                 id="birthDate"
                 type="date"
-                required
+                max={today()}
                 value={form.birthDate}
                 onChange={(e) => update("birthDate", e.target.value)}
-                className={inputCls}
+                className={inputCls(!!fieldErrors.birthDate)}
+                aria-invalid={!!fieldErrors.birthDate}
               />
             </Field>
-            <Field label="Birth Time (24h, local)" htmlFor="birthTime">
+            <Field label="Birth Time (24h, local)" htmlFor="birthTime" error={fieldErrors.birthTime}>
               <input
                 id="birthTime"
                 type="time"
-                required
                 value={form.birthTime}
                 onChange={(e) => update("birthTime", e.target.value)}
-                className={inputCls}
+                className={inputCls(!!fieldErrors.birthTime)}
+                aria-invalid={!!fieldErrors.birthTime}
               />
             </Field>
-            <Field label="City" htmlFor="city">
+            <Field label="City" htmlFor="city" error={fieldErrors.city}>
               <input
                 id="city"
-                required
                 value={form.city}
                 onChange={(e) => update("city", e.target.value)}
-                className={inputCls}
+                className={inputCls(!!fieldErrors.city)}
                 placeholder="Cincinnati"
+                aria-invalid={!!fieldErrors.city}
               />
             </Field>
-            <Field label="Country" htmlFor="country">
+            <Field label="Country" htmlFor="country" error={fieldErrors.country}>
               <input
                 id="country"
-                required
                 value={form.country}
                 onChange={(e) => update("country", e.target.value)}
-                className={inputCls}
-                placeholder="USA"
+                className={inputCls(!!fieldErrors.country)}
+                placeholder="United States"
+                aria-invalid={!!fieldErrors.country}
               />
             </Field>
           </div>
