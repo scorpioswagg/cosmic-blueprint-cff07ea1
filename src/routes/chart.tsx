@@ -1,9 +1,70 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { calculateChart } from "@/utils/astrology/chart.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Starfield } from "@/components/Starfield";
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+const FormSchema = z.object({
+  name: z.string().trim().min(1, "Please enter your full name.").max(120, "Name must be 120 characters or fewer."),
+  birthDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Please pick a valid birth date.")
+    .refine((d) => {
+      const t = Date.parse(d);
+      return Number.isFinite(t) && t <= Date.parse(today());
+    }, "Birth date cannot be in the future."),
+  birthTime: z.string().regex(/^\d{2}:\d{2}$/, "Please enter a valid birth time (24h, HH:MM)."),
+  city: z.string().trim().min(1, "City is required for geocoding.").max(120, "City must be 120 characters or fewer."),
+  country: z.string().trim().min(1, "Country is required for geocoding.").max(120, "Country must be 120 characters or fewer."),
+  compareWithFreeAstro: z.boolean(),
+});
+
+interface FriendlyError {
+  title: string;
+  detail: string;
+  hint?: string;
+}
+
+function friendlyError(raw: string): FriendlyError {
+  const msg = raw || "Unknown error";
+  const lower = msg.toLowerCase();
+  if (lower.includes("geocod") || lower.includes("could not resolve") || lower.includes("location not found")) {
+    return {
+      title: "We couldn't find that location",
+      detail: msg,
+      hint: "Double-check the city and country spelling. Try the full country name (e.g. \"United States\") or include a state/region.",
+    };
+  }
+  if (lower.includes("swiss ephemeris") || lower.includes("swiss_ephemeris_url")) {
+    return {
+      title: "Astronomy engine unavailable",
+      detail: msg,
+      hint: "Our Swiss Ephemeris service is temporarily unreachable. Please retry in a moment — if it persists, contact support.",
+    };
+  }
+  if (lower.includes("freeastro")) {
+    return {
+      title: "FreeAstro comparison failed",
+      detail: msg,
+      hint: "Try generating with \"Swiss Ephemeris only\" — your chart will still be accurate.",
+    };
+  }
+  if (lower.includes("timezone")) {
+    return {
+      title: "Couldn't determine timezone",
+      detail: msg,
+      hint: "Try a more specific city (e.g. add a state/region).",
+    };
+  }
+  if (lower.includes("network") || lower.includes("failed to fetch")) {
+    return { title: "Network problem", detail: msg, hint: "Check your internet connection and try again." };
+  }
+  return { title: "Couldn't generate chart", detail: msg };
+}
 
 export const Route = createFileRoute("/chart")({
   head: () => ({
@@ -52,7 +113,8 @@ function ChartPage() {
   const calc = useServerFn(calculateChart);
   const [form, setForm] = useState<FormState>(initialState);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<FriendlyError | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [result, setResult] = useState<CalcResult | null>(null);
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
 
@@ -66,13 +128,31 @@ function ChartPage() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
+  const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
+    setFieldErrors((fe) => (fe[key] ? { ...fe, [key]: undefined } : fe));
+  };
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setResult(null);
+
+    const parsed = FormSchema.safeParse(form);
+    if (!parsed.success) {
+      const fe: Partial<Record<keyof FormState, string>> = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0] as keyof FormState | undefined;
+        if (key && !fe[key]) fe[key] = issue.message;
+      }
+      setFieldErrors(fe);
+      setError({
+        title: "Please fix the highlighted fields",
+        detail: "Some required information is missing or invalid.",
+      });
+      return;
+    }
+    setFieldErrors({});
     setSubmitting(true);
     try {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
@@ -95,23 +175,22 @@ function ChartPage() {
         },
       });
       setResult(r);
-      if (!r.ok) setError(r.error);
+      if (!r.ok) setError(friendlyError(r.error));
     } catch (err: unknown) {
-      // requireSupabaseAuth throws a Response object (not an Error) on 401
       if (err instanceof Response) {
         if (err.status === 401 || err.status === 403) {
           navigate({ to: "/login" });
           return;
         }
         const body = await err.text().catch(() => "");
-        setError(body || `Server error (${err.status})`);
+        setError(friendlyError(body || `Server error (${err.status})`));
       } else {
         const msg = (err as Error).message ?? String(err);
         if (/auth|unauthor|sign in|jwt|\[object Response\]/i.test(msg)) {
           navigate({ to: "/login" });
           return;
         }
-        setError(msg);
+        setError(friendlyError(msg));
       }
     } finally {
       setSubmitting(false);
@@ -155,54 +234,55 @@ function ChartPage() {
           className="mt-10 space-y-6 rounded-2xl border border-border/50 bg-card/50 p-6 backdrop-blur-sm sm:p-8"
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Full Name" htmlFor="name">
+            <Field label="Full Name" htmlFor="name" error={fieldErrors.name}>
               <input
                 id="name"
-                required
                 value={form.name}
                 onChange={(e) => update("name", e.target.value)}
-                className={inputCls}
+                className={inputCls(!!fieldErrors.name)}
                 placeholder="Kyle Merritt"
+                aria-invalid={!!fieldErrors.name}
               />
             </Field>
-            <Field label="Birth Date" htmlFor="birthDate">
+            <Field label="Birth Date" htmlFor="birthDate" error={fieldErrors.birthDate}>
               <input
                 id="birthDate"
                 type="date"
-                required
+                max={today()}
                 value={form.birthDate}
                 onChange={(e) => update("birthDate", e.target.value)}
-                className={inputCls}
+                className={inputCls(!!fieldErrors.birthDate)}
+                aria-invalid={!!fieldErrors.birthDate}
               />
             </Field>
-            <Field label="Birth Time (24h, local)" htmlFor="birthTime">
+            <Field label="Birth Time (24h, local)" htmlFor="birthTime" error={fieldErrors.birthTime}>
               <input
                 id="birthTime"
                 type="time"
-                required
                 value={form.birthTime}
                 onChange={(e) => update("birthTime", e.target.value)}
-                className={inputCls}
+                className={inputCls(!!fieldErrors.birthTime)}
+                aria-invalid={!!fieldErrors.birthTime}
               />
             </Field>
-            <Field label="City" htmlFor="city">
+            <Field label="City" htmlFor="city" error={fieldErrors.city}>
               <input
                 id="city"
-                required
                 value={form.city}
                 onChange={(e) => update("city", e.target.value)}
-                className={inputCls}
+                className={inputCls(!!fieldErrors.city)}
                 placeholder="Cincinnati"
+                aria-invalid={!!fieldErrors.city}
               />
             </Field>
-            <Field label="Country" htmlFor="country">
+            <Field label="Country" htmlFor="country" error={fieldErrors.country}>
               <input
                 id="country"
-                required
                 value={form.country}
                 onChange={(e) => update("country", e.target.value)}
-                className={inputCls}
-                placeholder="USA"
+                className={inputCls(!!fieldErrors.country)}
+                placeholder="United States"
+                aria-invalid={!!fieldErrors.country}
               />
             </Field>
           </div>
@@ -248,8 +328,15 @@ function ChartPage() {
           </fieldset>
 
           {error && (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {error}
+            <div
+              role="alert"
+              className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            >
+              <p className="font-semibold">{error.title}</p>
+              <p className="mt-1 text-destructive/90">{error.detail}</p>
+              {error.hint && (
+                <p className="mt-2 text-xs text-destructive/80">💡 {error.hint}</p>
+              )}
             </div>
           )}
 
@@ -268,16 +355,23 @@ function ChartPage() {
   );
 }
 
-const inputCls =
-  "w-full rounded-lg border border-border/60 bg-background/60 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
+function inputCls(hasError: boolean) {
+  const base =
+    "w-full rounded-lg border bg-background/60 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1";
+  return hasError
+    ? `${base} border-destructive/70 focus:border-destructive focus:ring-destructive`
+    : `${base} border-border/60 focus:border-primary focus:ring-primary`;
+}
 
 function Field({
   label,
   htmlFor,
+  error,
   children,
 }: {
   label: string;
   htmlFor: string;
+  error?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -286,6 +380,11 @@ function Field({
         {label}
       </label>
       {children}
+      {error && (
+        <p className="text-xs text-destructive" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
