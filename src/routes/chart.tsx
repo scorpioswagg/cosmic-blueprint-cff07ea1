@@ -328,8 +328,15 @@ function ChartPage() {
           </fieldset>
 
           {error && (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {error}
+            <div
+              role="alert"
+              className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            >
+              <p className="font-semibold">{error.title}</p>
+              <p className="mt-1 text-destructive/90">{error.detail}</p>
+              {error.hint && (
+                <p className="mt-2 text-xs text-destructive/80">💡 {error.hint}</p>
+              )}
             </div>
           )}
 
