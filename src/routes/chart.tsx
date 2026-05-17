@@ -113,7 +113,8 @@ function ChartPage() {
   const calc = useServerFn(calculateChart);
   const [form, setForm] = useState<FormState>(initialState);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<FriendlyError | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [result, setResult] = useState<CalcResult | null>(null);
   const [isSignedIn, setIsSignedIn] = useState<boolean | null>(null);
 
@@ -127,13 +128,31 @@ function ChartPage() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
+  const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
+    setFieldErrors((fe) => (fe[key] ? { ...fe, [key]: undefined } : fe));
+  };
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setResult(null);
+
+    const parsed = FormSchema.safeParse(form);
+    if (!parsed.success) {
+      const fe: Partial<Record<keyof FormState, string>> = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0] as keyof FormState | undefined;
+        if (key && !fe[key]) fe[key] = issue.message;
+      }
+      setFieldErrors(fe);
+      setError({
+        title: "Please fix the highlighted fields",
+        detail: "Some required information is missing or invalid.",
+      });
+      return;
+    }
+    setFieldErrors({});
     setSubmitting(true);
     try {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
