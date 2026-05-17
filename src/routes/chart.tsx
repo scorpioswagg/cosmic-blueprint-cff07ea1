@@ -1,9 +1,70 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { calculateChart } from "@/utils/astrology/chart.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Starfield } from "@/components/Starfield";
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+const FormSchema = z.object({
+  name: z.string().trim().min(1, "Please enter your full name.").max(120, "Name must be 120 characters or fewer."),
+  birthDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Please pick a valid birth date.")
+    .refine((d) => {
+      const t = Date.parse(d);
+      return Number.isFinite(t) && t <= Date.parse(today());
+    }, "Birth date cannot be in the future."),
+  birthTime: z.string().regex(/^\d{2}:\d{2}$/, "Please enter a valid birth time (24h, HH:MM)."),
+  city: z.string().trim().min(1, "City is required for geocoding.").max(120, "City must be 120 characters or fewer."),
+  country: z.string().trim().min(1, "Country is required for geocoding.").max(120, "Country must be 120 characters or fewer."),
+  compareWithFreeAstro: z.boolean(),
+});
+
+interface FriendlyError {
+  title: string;
+  detail: string;
+  hint?: string;
+}
+
+function friendlyError(raw: string): FriendlyError {
+  const msg = raw || "Unknown error";
+  const lower = msg.toLowerCase();
+  if (lower.includes("geocod") || lower.includes("could not resolve") || lower.includes("location not found")) {
+    return {
+      title: "We couldn't find that location",
+      detail: msg,
+      hint: "Double-check the city and country spelling. Try the full country name (e.g. \"United States\") or include a state/region.",
+    };
+  }
+  if (lower.includes("swiss ephemeris") || lower.includes("swiss_ephemeris_url")) {
+    return {
+      title: "Astronomy engine unavailable",
+      detail: msg,
+      hint: "Our Swiss Ephemeris service is temporarily unreachable. Please retry in a moment — if it persists, contact support.",
+    };
+  }
+  if (lower.includes("freeastro")) {
+    return {
+      title: "FreeAstro comparison failed",
+      detail: msg,
+      hint: "Try generating with \"Swiss Ephemeris only\" — your chart will still be accurate.",
+    };
+  }
+  if (lower.includes("timezone")) {
+    return {
+      title: "Couldn't determine timezone",
+      detail: msg,
+      hint: "Try a more specific city (e.g. add a state/region).",
+    };
+  }
+  if (lower.includes("network") || lower.includes("failed to fetch")) {
+    return { title: "Network problem", detail: msg, hint: "Check your internet connection and try again." };
+  }
+  return { title: "Couldn't generate chart", detail: msg };
+}
 
 export const Route = createFileRoute("/chart")({
   head: () => ({
