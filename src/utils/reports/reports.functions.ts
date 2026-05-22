@@ -149,7 +149,8 @@ export const purchaseReport = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
 
     // 1) Resolve product
-    const { data: product, error: prodErr } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: product, error: prodErr } = await (supabase as any)
       .from("report_products")
       .select("report_type, name, price_cents")
       .eq("report_type", data.reportType)
