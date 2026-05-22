@@ -231,10 +231,11 @@ Structure the output with 6-10 ## H2 sections specific to a ${typedProduct.repor
     if (uploadErr) throw new Error(`PDF upload failed: ${uploadErr.message}`);
 
     // 5) Persist content + storage path + status
-    const { error: updateErr } = await supabaseAdmin
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: updateErr } = await (supabaseAdmin as any)
       .from("reports")
       .update({
-        content: { markdown, sections } as unknown as object,
+        content: { markdown, sections },
         storage_path: storagePath,
         status: "completed",
       })
