@@ -190,9 +190,13 @@ function ReportCard({
             )}
           </div>
           {isSignedIn ? (
-            <button className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md hover:shadow-primary/25">
+            <Link
+              to="/reports/$reportType"
+              params={{ reportType: product.report_type }}
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md hover:shadow-primary/25"
+            >
               {isAdmin ? "Generate" : "Purchase"}
-            </button>
+            </Link>
           ) : (
             <Link
               to="/login"
