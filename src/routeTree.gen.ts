@@ -15,6 +15,7 @@ import { Route as ChartRouteImport } from './routes/chart'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReportsSuccessRouteImport } from './routes/reports.success'
 import { Route as ReportsReportTypeRouteImport } from './routes/reports.$reportType'
+import { Route as AdminStripeWebhookRouteImport } from './routes/admin.stripe-webhook'
 import { Route as AdminAccuracyRouteImport } from './routes/admin.accuracy'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
 
@@ -48,6 +49,11 @@ const ReportsReportTypeRoute = ReportsReportTypeRouteImport.update({
   path: '/$reportType',
   getParentRoute: () => ReportsRoute,
 } as any)
+const AdminStripeWebhookRoute = AdminStripeWebhookRouteImport.update({
+  id: '/admin/stripe-webhook',
+  path: '/admin/stripe-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminAccuracyRoute = AdminAccuracyRouteImport.update({
   id: '/admin/accuracy',
   path: '/admin/accuracy',
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/reports': typeof ReportsRouteWithChildren
   '/admin/accuracy': typeof AdminAccuracyRoute
+  '/admin/stripe-webhook': typeof AdminStripeWebhookRoute
   '/reports/$reportType': typeof ReportsReportTypeRoute
   '/reports/success': typeof ReportsSuccessRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reports': typeof ReportsRouteWithChildren
   '/admin/accuracy': typeof AdminAccuracyRoute
+  '/admin/stripe-webhook': typeof AdminStripeWebhookRoute
   '/reports/$reportType': typeof ReportsReportTypeRoute
   '/reports/success': typeof ReportsSuccessRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/reports': typeof ReportsRouteWithChildren
   '/admin/accuracy': typeof AdminAccuracyRoute
+  '/admin/stripe-webhook': typeof AdminStripeWebhookRoute
   '/reports/$reportType': typeof ReportsReportTypeRoute
   '/reports/success': typeof ReportsSuccessRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reports'
     | '/admin/accuracy'
+    | '/admin/stripe-webhook'
     | '/reports/$reportType'
     | '/reports/success'
     | '/api/public/stripe-webhook'
@@ -108,6 +118,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reports'
     | '/admin/accuracy'
+    | '/admin/stripe-webhook'
     | '/reports/$reportType'
     | '/reports/success'
     | '/api/public/stripe-webhook'
@@ -118,6 +129,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/reports'
     | '/admin/accuracy'
+    | '/admin/stripe-webhook'
     | '/reports/$reportType'
     | '/reports/success'
     | '/api/public/stripe-webhook'
@@ -129,6 +141,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ReportsRoute: typeof ReportsRouteWithChildren
   AdminAccuracyRoute: typeof AdminAccuracyRoute
+  AdminStripeWebhookRoute: typeof AdminStripeWebhookRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
 }
 
@@ -176,6 +189,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsReportTypeRouteImport
       parentRoute: typeof ReportsRoute
     }
+    '/admin/stripe-webhook': {
+      id: '/admin/stripe-webhook'
+      path: '/admin/stripe-webhook'
+      fullPath: '/admin/stripe-webhook'
+      preLoaderRoute: typeof AdminStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/accuracy': {
       id: '/admin/accuracy'
       path: '/admin/accuracy'
@@ -212,8 +232,18 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ReportsRoute: ReportsRouteWithChildren,
   AdminAccuracyRoute: AdminAccuracyRoute,
+  AdminStripeWebhookRoute: AdminStripeWebhookRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
