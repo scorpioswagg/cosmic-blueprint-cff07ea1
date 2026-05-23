@@ -312,6 +312,39 @@ export type Database = {
           },
         ]
       }
+      stripe_webhook_events: {
+        Row: {
+          error: string | null
+          event_type: string | null
+          id: string
+          raw_summary: Json | null
+          received_at: string
+          signature_verified: boolean
+          status_code: number
+          stripe_event_id: string | null
+        }
+        Insert: {
+          error?: string | null
+          event_type?: string | null
+          id?: string
+          raw_summary?: Json | null
+          received_at?: string
+          signature_verified?: boolean
+          status_code: number
+          stripe_event_id?: string | null
+        }
+        Update: {
+          error?: string | null
+          event_type?: string | null
+          id?: string
+          raw_summary?: Json | null
+          received_at?: string
+          signature_verified?: boolean
+          status_code?: number
+          stripe_event_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
