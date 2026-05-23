@@ -9,6 +9,8 @@ import { getRequestHost } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+type JsonSummary = Record<string, string | number | boolean | null>;
+
 interface WebhookEventRow {
   id: string;
   received_at: string;
@@ -17,7 +19,7 @@ interface WebhookEventRow {
   signature_verified: boolean;
   status_code: number;
   error: string | null;
-  raw_summary: Record<string, unknown> | null;
+  raw_summary: JsonSummary | null;
 }
 
 export const getStripeWebhookStatus = createServerFn({ method: "POST" })
