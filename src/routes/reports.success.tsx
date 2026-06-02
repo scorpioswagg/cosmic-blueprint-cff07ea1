@@ -23,41 +23,110 @@ interface ReportRow {
   created_at: string;
 }
 
+type ConnState = "connecting" | "live" | "fallback";
+
+function statusLabel(status: string): string {
+  switch (status) {
+    case "pending":
+      return "Queued";
+    case "processing":
+    case "generating":
+      return "Generating";
+    case "completed":
+      return "Completed";
+    case "failed":
+      return "Failed";
+    default:
+      return status;
+  }
+}
+
 function SuccessPage() {
   const fetchReports = useServerFn(getUserReports);
   const fetchPdfUrl = useServerFn(getReportPdfUrl);
   const [reports, setReports] = useState<ReportRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [conn, setConn] = useState<ConnState>("connecting");
 
   const load = async () => {
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    const list = await fetchReports({ headers: { Authorization: `Bearer ${token}` } });
+    const list = await fetchReports();
     setReports(list as ReportRow[]);
     setLoading(false);
   };
 
   useEffect(() => {
-    load();
-    // Poll while any report is pending (webhook may still be running)
-    const id = setInterval(() => {
-      load();
-    }, 4000);
-    return () => clearInterval(id);
+    let cancelled = false;
+    let fallbackTimer: ReturnType<typeof setInterval> | null = null;
+
+    const startFallback = () => {
+      if (fallbackTimer) return;
+      setConn("fallback");
+      fallbackTimer = setInterval(() => {
+        if (!cancelled) load();
+      }, 5000);
+    };
+
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    (async () => {
+      await load();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id;
+      if (!userId || cancelled) return;
+
+      channel = supabase
+        .channel(`reports:${userId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "reports",
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload) => {
+            const next = (payload.new ?? null) as ReportRow | null;
+            const old = (payload.old ?? null) as { id?: string } | null;
+            setReports((prev) => {
+              if (payload.eventType === "DELETE" && old?.id) {
+                return prev.filter((r) => r.id !== old.id);
+              }
+              if (!next) return prev;
+              const idx = prev.findIndex((r) => r.id === next.id);
+              if (idx === -1) return [next, ...prev];
+              const copy = prev.slice();
+              copy[idx] = { ...copy[idx], ...next };
+              return copy;
+            });
+          },
+        )
+        .subscribe((status) => {
+          if (cancelled) return;
+          if (status === "SUBSCRIBED") {
+            setConn("live");
+            if (fallbackTimer) {
+              clearInterval(fallbackTimer);
+              fallbackTimer = null;
+            }
+          } else if (
+            status === "CHANNEL_ERROR" ||
+            status === "TIMED_OUT" ||
+            status === "CLOSED"
+          ) {
+            startFallback();
+          }
+        });
+    })();
+
+    return () => {
+      cancelled = true;
+      if (fallbackTimer) clearInterval(fallbackTimer);
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   const handleDownload = async (reportId: string) => {
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-    if (!token) return;
-    const { url } = await fetchPdfUrl({
-      headers: { Authorization: `Bearer ${token}` },
-      data: { reportId },
-    });
+    const { url } = await fetchPdfUrl({ data: { reportId } });
     window.open(url, "_blank");
   };
 
@@ -71,8 +140,24 @@ function SuccessPage() {
             Your Reports
           </h1>
           <p className="mt-2 text-muted-foreground">
-            Reports generate in the background. This page refreshes automatically.
+            {conn === "live"
+              ? "Live updates enabled — status changes appear instantly."
+              : conn === "fallback"
+                ? "Live connection unavailable — refreshing every few seconds."
+                : "Connecting for live updates…"}
           </p>
+          <div className="mt-3 inline-flex items-center gap-2 text-xs text-muted-foreground">
+            <span
+              className={`h-2 w-2 rounded-full ${
+                conn === "live"
+                  ? "bg-emerald-500"
+                  : conn === "fallback"
+                    ? "bg-amber-500"
+                    : "animate-pulse bg-primary"
+              }`}
+            />
+            {conn === "live" ? "Realtime" : conn === "fallback" ? "Polling" : "Connecting"}
+          </div>
         </div>
 
         {loading ? (
@@ -93,7 +178,7 @@ function SuccessPage() {
                     {r.report_type.replace(/_/g, " ")}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(r.created_at).toLocaleString()} · {r.status}
+                    {new Date(r.created_at).toLocaleString()} · {statusLabel(r.status)}
                   </p>
                 </div>
                 {r.status === "completed" && r.storage_path ? (
@@ -108,7 +193,7 @@ function SuccessPage() {
                 ) : (
                   <span className="flex items-center gap-2 text-sm text-muted-foreground">
                     <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
-                    Generating…
+                    {statusLabel(r.status)}…
                   </span>
                 )}
               </li>
